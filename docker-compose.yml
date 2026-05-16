@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  bee8-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bee8-bot:latest
+    container_name: bee8_bot
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8068:8068"
+    volumes:
+      - .:/app
+    environment:
+      - TZ=Europe/Warsaw
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8068')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
