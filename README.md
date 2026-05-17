@@ -24,7 +24,7 @@ recall na oryginalnych wyjściach).
 - Risk: emergency stop kapitałowy (domyślnie 5%), opcjonalne TP1/TP2.
 - Backtest, walk-forward optimization (WFO) i paper/live runner używają tego
   samego silnika sygnałów.
-- Dashboard Dash (port 8068) pozwala uruchomić backtest i WFO, podejrzeć
+- Dashboard Dash (port 8072) pozwala uruchomić backtest i WFO, podejrzeć
   wykres ze świecami i markerami transakcji, statystyki i listę transakcji.
 
 ## Pliki
@@ -48,15 +48,19 @@ recall na oryginalnych wyjściach).
 
 ```bash
 docker compose up -d bee8-bot
-# http://127.0.0.1:8068
+# http://127.0.0.1:8072
 ```
 
 albo lokalnie:
 
 ```bash
 pip install -r requirements.txt
-python bee8_dashboard.py --host 0.0.0.0 --port 8068
+python bee8_dashboard.py --host 0.0.0.0 --port 8072
 ```
+
+Porty zajęte na hoście (lokalna konwencja):
+- 8067 bee7, 8068 bee4_3, 8069 bee4_4, 8070 chart_inspector, 8071 bee6 →
+  bee8 dostaje **8072**.
 
 ### Backtest / WFO z linii poleceń
 

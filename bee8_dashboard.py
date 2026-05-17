@@ -434,6 +434,14 @@ def _make_chart(df: pd.DataFrame, trades: list[dict]) -> go.Figure:
     return fig
 
 
+def _opts(values):
+    return [{"label": str(v), "value": v} for v in values]
+
+
+def card_s_wrap(children):
+    return html.Div(children, style=card_s)
+
+
 # ─── App ──────────────────────────────────────────────────────────────────────
 app = dash.Dash(__name__, update_title=None)
 app.title = "bee8 - Mean Reversion"
@@ -572,14 +580,6 @@ app.layout = html.Div(
         ),
     ],
 )
-
-
-def _opts(values):
-    return [{"label": str(v), "value": v} for v in values]
-
-
-def card_s_wrap(children):
-    return html.Div(children, style=card_s)
 
 
 # ─── Build params from controls ───────────────────────────────────────────────
@@ -838,7 +838,7 @@ def _trades_table(trades: list[dict]):
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="bee8 dashboard")
     p.add_argument("--host", default="0.0.0.0")
-    p.add_argument("--port", type=int, default=8068)
+    p.add_argument("--port", type=int, default=8072)
     p.add_argument("--debug", action="store_true")
     return p.parse_args()
 

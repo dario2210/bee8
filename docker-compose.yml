@@ -9,14 +9,14 @@ services:
     container_name: bee8_bot
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8068:8068"
+      - "127.0.0.1:8072:8072"
     volumes:
       - .:/app
     environment:
       - TZ=Europe/Warsaw
       - PYTHONUNBUFFERED=1
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8068')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8072')"]
       interval: 30s
       timeout: 10s
       retries: 3
