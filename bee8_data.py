@@ -214,9 +214,9 @@ def supertrend(
     direction = pd.Series(np.ones(len(df)), index=df.index, dtype="float64")
     st_line = pd.Series(np.nan, index=df.index, dtype="float64")
 
-    close = df["close"].to_numpy()
-    upper_arr = upper_basic.to_numpy()
-    lower_arr = lower_basic.to_numpy()
+    close = df["close"].to_numpy(copy=True)
+    upper_arr = upper_basic.to_numpy(copy=True)
+    lower_arr = lower_basic.to_numpy(copy=True)
     direction_arr = np.ones(len(df))
     st_arr = np.full(len(df), np.nan)
 
@@ -359,31 +359,49 @@ def prepare_indicators(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+_TIME_COL_ALIASES = ("open_time", "open_time_ms", "open_time_utc", "time", "timestamp", "date")
+
+
 def load_klines(csv_path: str) -> pd.DataFrame:
-    """Load candle CSV (open_time as ms/seconds/string, or 'time' column)."""
+    """Load candle CSV.
+
+    Accepts a wide range of common Binance dump column names:
+      - open_time (ms or seconds, numeric)
+      - open_time_ms (numeric ms)
+      - open_time_utc (ISO string)
+      - time / timestamp / date
+    """
     df = pd.read_csv(csv_path)
     df.rename(columns={c: c.lower() for c in df.columns}, inplace=True)
 
-    if "open_time" in df.columns:
-        col = df["open_time"]
-        try:
-            is_numeric = np.issubdtype(col.dtype, np.number)
-        except TypeError:
-            is_numeric = False
-        if is_numeric:
-            unit = "ms" if col.max() > 1e12 else "s"
-            df["time"] = pd.to_datetime(col, unit=unit, utc=True)
-        else:
-            df["time"] = pd.to_datetime(col, utc=True, errors="coerce")
-    elif "time" in df.columns:
-        df["time"] = pd.to_datetime(df["time"], utc=True, errors="coerce")
-    else:
-        raise ValueError("Missing open_time / time column in CSV.")
+    time_col = next((c for c in _TIME_COL_ALIASES if c in df.columns), None)
+    if time_col is None:
+        raise ValueError(
+            "Missing time column in CSV - expected one of: "
+            + ", ".join(_TIME_COL_ALIASES)
+        )
 
-    for col in ["open", "high", "low", "close", "volume"]:
-        if col not in df.columns:
-            raise ValueError(f"Missing '{col}' column in CSV.")
-        df[col] = pd.to_numeric(df[col], errors="coerce")
+    col = df[time_col]
+    try:
+        is_numeric = np.issubdtype(col.dtype, np.number)
+    except TypeError:
+        is_numeric = False
+    if is_numeric:
+        max_val = float(pd.to_numeric(col, errors="coerce").max())
+        if max_val > 1e14:
+            unit = "us"
+        elif max_val > 1e11:
+            unit = "ms"
+        else:
+            unit = "s"
+        df["time"] = pd.to_datetime(col, unit=unit, utc=True)
+    else:
+        df["time"] = pd.to_datetime(col, utc=True, errors="coerce")
+
+    for col_name in ["open", "high", "low", "close", "volume"]:
+        if col_name not in df.columns:
+            raise ValueError(f"Missing '{col_name}' column in CSV.")
+        df[col_name] = pd.to_numeric(df[col_name], errors="coerce")
 
     df = df.dropna(subset=["time"])
     df = df.sort_values("time").reset_index(drop=True)

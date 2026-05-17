@@ -219,11 +219,16 @@ def update_csv_cache(
         df_old = pd.read_csv(csv_path)
 
         # normalizacja nazwy kolumny czasu
-        if "open_time" not in df_old.columns:
-            if "time" in df_old.columns:
-                df_old = df_old.rename(columns={"time": "open_time"})
-            else:
-                raise ValueError("CSV musi mieć kolumnę 'open_time' lub 'time'.")
+        df_old.rename(columns={c: c.lower() for c in df_old.columns}, inplace=True)
+        time_aliases = ("open_time", "open_time_ms", "open_time_utc", "time", "timestamp", "date")
+        time_col = next((c for c in time_aliases if c in df_old.columns), None)
+        if time_col is None:
+            raise ValueError(
+                "CSV musi mieć kolumnę czasu (np. "
+                + ", ".join(time_aliases) + ")."
+            )
+        if time_col != "open_time":
+            df_old = df_old.rename(columns={time_col: "open_time"})
 
         # konwersja open_time na int ms (może być zapisany jako string daty)
         if not np.issubdtype(df_old["open_time"].dtype, np.number):
@@ -232,6 +237,11 @@ def update_csv_cache(
             df_old["open_time"] = (
                 pd.to_datetime(df_old["open_time"], utc=True).astype("int64") // 10**6
             ).astype("int64")
+        else:
+            max_val = float(pd.to_numeric(df_old["open_time"], errors="coerce").max())
+            if max_val > 0 and max_val < 1e11:
+                # seconds -> ms
+                df_old["open_time"] = (df_old["open_time"].astype("int64") * 1000).astype("int64")
 
         df_old = (
             df_old[keep]
